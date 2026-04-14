@@ -42,8 +42,33 @@ jobs:
         run: ./autogen
       - name: configure
         run: ./configure
+      # - name: check
+      #   run: make VERBOSE=1 AM_COLOR_TESTS=always check
+
       - name: check
-        run: make VERBOSE=1 AM_COLOR_TESTS=always check
+        run: |
+          make VERBOSE=1 AM_COLOR_TESTS=always check || {
+            echo "===== test-suite.log (head) ====="
+            test -f test-suite.log && sed -n '1,200p' test-suite.log || true
+      
+            echo "===== test-suite.log (tail) ====="
+            test -f test-suite.log && tail -n 200 test-suite.log || true
+      
+            echo "===== *.log files (tail) ====="
+            find . -maxdepth 4 -name '*.log' -print -exec tail -n 200 {} \; || true
+            exit 1
+          }
+
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-${{ job.check_run_id }}
+          path: |
+            test-suite.log
+            **/*.log
+
+
       - name: distcheck
         run: make VERBOSE=1 AM_COLOR_TESTS=always distcheck
       - name: distribution tarball is complete
