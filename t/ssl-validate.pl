@@ -10,12 +10,16 @@ local $ddclient::globals{verbose} = 1;
 httpd_required();
 httpd_ssl_required();
 
-httpd('4', 1)->run(sub { return [200, $textplain, ['127.0.0.1']]; });
-httpd('6', 1)->run(sub { return [200, $textplain, ['::1']]; }) if httpd('6', 1);
+my $httpd4 = httpd('4', 1);
+$httpd4->run(sub { return [200, $textplain, ['127.0.0.1']]; });
+
+my $httpd6 = httpd('6', 1);
+$httpd6->run(sub { return [200, $textplain, ['::1']]; }) if $httpd6;
+
 my $h = 't/ssl-validate.pl';
 my %ep = (
-    '4' => httpd('4', 1)->endpoint(),
-    '6' => httpd('6', 1) ? httpd('6', 1)->endpoint() : undef,
+    '4' => $httpd4->endpoint(),
+    '6' => $httpd6 ? $httpd6->endpoint() : undef,
 );
 
 my @test_cases = (
